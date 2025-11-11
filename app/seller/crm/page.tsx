@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   Users,
+  DollarSign,
   Plus,
   Edit,
   Trash2,

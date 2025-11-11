@@ -68,8 +68,46 @@ export default function WarehouseManagementPage() {
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [activeTab, setActiveTab] = useState("overview")
 
+type WarehouseOperationItem = {
+  sku: string
+  name: string
+  quantity: number
+  location: string
+  received?: number
+  picked?: number
+  putaway?: number
+  transferred?: number
+  counted?: number
+  variance?: number
+}
+
+type WarehouseOperation = {
+  id: number
+  type: string
+  reference: string
+  status: string
+  priority: "urgent" | "high" | "medium" | "low"
+  items: WarehouseOperationItem[]
+  scheduledDate: string
+  actualDate: string | null
+  assignedTo: string
+  supplier?: string
+  customer?: string
+  dock?: string
+  truck?: string
+  zone?: string
+  orderNumber?: string
+  fromLocation?: string
+  toLocation?: string
+  notes?: string
+  qualityCheck?: string
+}
+
+const getCompletedQuantity = (item: WarehouseOperationItem) =>
+  item.received ?? item.picked ?? item.putaway ?? item.transferred ?? item.counted ?? 0
+
   // Sample warehouse data
-  const warehouseOperations = [
+const warehouseOperations: WarehouseOperation[] = [
     {
       id: 1,
       type: "receiving",
@@ -639,8 +677,16 @@ export default function WarehouseManagementPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {sortedOperations.map((operation) => (
-                      <div key={operation.id} className="border rounded-lg p-6 hover:bg-muted/50 transition-colors">
+                    {sortedOperations.map((operation) => {
+                      const completedQuantity = operation.items.reduce(
+                        (sum, item) => sum + getCompletedQuantity(item),
+                        0
+                      )
+                      const totalQuantity = operation.items.reduce((sum, item) => sum + item.quantity, 0)
+                      const progressPercentage = totalQuantity === 0 ? 0 : (completedQuantity / totalQuantity) * 100
+
+                      return (
+                        <div key={operation.id} className="border rounded-lg p-6 hover:bg-muted/50 transition-colors">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-4">
                             <Checkbox
@@ -718,23 +764,23 @@ export default function WarehouseManagementPage() {
                                     <span>Qty: {item.quantity}</span>
                                     <span>Location: {item.location}</span>
                                   </div>
-                                  {'received' in item && (
+                                  {typeof item.received === "number" && (
                                     <div className="flex justify-between text-muted-foreground">
-                                      <span>Received: {(item as any).received}</span>
-                                      <span>Remaining: {item.quantity - (item as any).received}</span>
+                                      <span>Received: {item.received}</span>
+                                      <span>Remaining: {item.quantity - item.received}</span>
                                     </div>
                                   )}
-                                  {'picked' in item && (
+                                  {typeof item.picked === "number" && (
                                     <div className="flex justify-between text-muted-foreground">
-                                      <span>Picked: {(item as any).picked}</span>
-                                      <span>Remaining: {item.quantity - (item as any).picked}</span>
+                                      <span>Picked: {item.picked}</span>
+                                      <span>Remaining: {item.quantity - item.picked}</span>
                                     </div>
                                   )}
-                                  {'variance' in item && (
+                                  {typeof item.variance === "number" && (
                                     <div className="flex justify-between text-muted-foreground">
-                                      <span>Variance: {(item as any).variance > 0 ? '+' : ''}{(item as any).variance}</span>
-                                      <span className={(item as any).variance === 0 ? "text-green-600" : "text-red-600"}>
-                                        {(item as any).variance === 0 ? "Perfect" : "Adjustment needed"}
+                                      <span>Variance: {item.variance > 0 ? "+" : ""}{item.variance}</span>
+                                      <span className={item.variance === 0 ? "text-green-600" : "text-red-600"}>
+                                        {item.variance === 0 ? "Perfect" : "Adjustment needed"}
                                       </span>
                                     </div>
                                   )}
@@ -815,30 +861,13 @@ export default function WarehouseManagementPage() {
                           <div className="flex justify-between text-sm mb-2">
                             <span>Operation Progress</span>
                             <span className="text-muted-foreground">
-                              {operation.items.reduce((sum, item) => {
-                                const completed = ('received' in item ? (item as any).received : 0) ||
-                                                ('picked' in item ? (item as any).picked : 0) ||
-                                                ('putaway' in item ? (item as any).putaway : 0) ||
-                                                ('transferred' in item ? (item as any).transferred : 0) ||
-                                                ('counted' in item ? (item as any).counted : 0) || 0;
-                                return sum + completed;
-                              }, 0)}/
-                              {operation.items.reduce((sum, item) => sum + item.quantity, 0)} completed
+                              {completedQuantity}/{totalQuantity} completed
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-primary h-2 rounded-full transition-all duration-300"
-                              style={{ 
-                                width: `${(operation.items.reduce((sum, item) => {
-                                  const completed = ('received' in item ? (item as any).received : 0) ||
-                                                  ('picked' in item ? (item as any).picked : 0) ||
-                                                  ('putaway' in item ? (item as any).putaway : 0) ||
-                                                  ('transferred' in item ? (item as any).transferred : 0) ||
-                                                  ('counted' in item ? (item as any).counted : 0) || 0;
-                                  return sum + completed;
-                                }, 0) / operation.items.reduce((sum, item) => sum + item.quantity, 0)) * 100}%` 
-                              }}
+                              style={{ width: `${progressPercentage}%` }}
                             ></div>
                           </div>
                         </div>
@@ -851,7 +880,8 @@ export default function WarehouseManagementPage() {
                           </div>
                         )}
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </CardContent>
               </Card>

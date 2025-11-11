@@ -78,7 +78,7 @@ export default function TijaratEcommerce() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [viewMode, setViewMode] = useState("grid")
   const [currentPage, setCurrentPage] = useState(1)
-  const [favorites, setFavorites] = useState(new Set())
+  const [favorites, setFavorites] = useState<Set<number>>(new Set())
   const { addToCart } = useCart()
 
   const products: Product[] = [
@@ -98,7 +98,7 @@ export default function TijaratEcommerce() {
 
   const categories = ["Cotton", "Wheat", "Rice", "Oil", "Sugar", "Chemicals", "Plastic"]
 
-  const toggleFavorite = (productId) => {
+  const toggleFavorite = (productId: number) => {
     const newFavorites = new Set(favorites)
     if (newFavorites.has(productId)) {
       newFavorites.delete(productId)
