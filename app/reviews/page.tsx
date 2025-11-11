@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   Phone,
   ChevronDown,
+  ChevronLeft,
   Facebook,
   Instagram,
   Linkedin,
